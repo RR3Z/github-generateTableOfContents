@@ -4,12 +4,10 @@
 
 #include <QCoreApplication>
 #include <iostream>
-#include <fstream>
 #include <QFile>
 #include <QDebug>
 #include <QTextStream>
-#include <QString>
 using namespace std;
 
 // Запросить данные у пользователя
-void requestInputData(QString *inputFilePath, QString *outputFilePath, int argc, char *argv[]);
+void requestInputData(string *inputFilePath, int argc, char *argv[]);

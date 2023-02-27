@@ -1,26 +1,17 @@
 #include "header.h"
 
-// Ввод и вывод данных из консоли для QString
-QTextStream CIN(stdin, QIODevice::ReadOnly);
-QTextStream COUT(stdout, QIODevice::WriteOnly);
-
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    // Подключить русский язык для корректного вывода русского текста в консоль
-    setlocale(LC_ALL, "Russian");
-
-    // Объявить переменные, где хранятся полные пути на входной и выходной файлы
-    QString inputFilePath;
-    QString outputFilePath;
+    // Объявить переменную, где хранится полный путь на входной файл
+    string inputFilePath;
 
     // Запросить входные данные у пользователя...
-    requestInputData(&inputFilePath, &outputFilePath, argc, argv);
+    requestInputData(&inputFilePath, argc, argv);
 
-    // Создать объекты для входного и выходного файлов
-    QFile inputFile(inputFilePath.toUtf8().data());
-    QFile outputFile(outputFilePath.toUtf8().data());
+    // Создать объект для входного файла
+    QFile inputFile(inputFilePath.data());
 
     // Прочитать содержимое входного файла...
 
@@ -33,51 +24,46 @@ int main(int argc, char *argv[])
 }
 
 // Запросить входнные данные у пользователя
-void requestInputData(QString *inputFilePath, QString *outputFilePath, int argc, char *argv[])
+void requestInputData(string *inputFilePath, int argc, char *argv[])
 {
-    // В зависимости от кол-ва переданных аргументов...
-    switch (argc) {
-    // Если полные пути входного и выходного файлов не были передан...
-    case 1:
-        // Запросить у пользователя полный путь для входного файла
-        cout << "Path for input file: ";
-        CIN >> *inputFilePath;
-
-        // Запросить у пользователя полный путь для выходного файла
-        cout << "Path for output file: ";
-        CIN >> *outputFilePath;
+    // Если был передан полный путь для входного файла...
+    if(argc == 2){
+        *inputFilePath = argv[2];
+    }
+    // Иначе запросить полный путь для входного файла...
+    else{
+        cout << "\nPath for input file: ";
+        cin >> *inputFilePath;
         cout << "\n";
-        break;
+    }
 
-    // Если был передан полный путь только для входного файла...
-    case 2:
-        *inputFilePath = argv[1];
+    // Проверить формат входного файла...
+    int dot = inputFilePath->find_last_of('.');
+    while((inputFilePath->find(".html", dot - 1) == -1) || (inputFilePath->find(".txt", dot - 1) == -1) ){
+        // Вывести сообщение об ошибке
+        cout << "The format of the input file does not meet the requirements of the software.\n";
 
-        // Запросить у пользователя полный путь для выходного файла
-        cout << "Path for output file: ";
-        CIN >> *outputFilePath;
+        // Вывести пользователю сообщение с просьбой ввести полный путь для входного файла
+        cout << "\nPath for input file: ";
+        cin >> *inputFilePath;
         cout << "\n";
-        break;
 
-    // Если полные пути входного и выходного файлов были переданы...
-    case 3:
-        *inputFilePath = argv[1];
-        *outputFilePath = argv[2];
-        break;
+        // Обновить позицию последней точки в строке
+        dot = inputFilePath->find_last_of('.');
     }
 
     // Определить, существует ли входной файл с заданным именем по заданному пути...
-    bool isInputFileExists = QFile::exists(inputFilePath->toUtf8().data());
+    bool isInputFileExists = QFile::exists(inputFilePath->data());
     while(!isInputFileExists){
         // Вывести сообщение об ошибке
         cout << "The input data file is specified incorrectly. The file may not exist.";
 
         // Вывести пользователю сообщение с просьбой ввести полный путь для входного файла
         cout << "\nPath for input file: ";
-        CIN >> *inputFilePath;
+        cin >> *inputFilePath;
         cout << "\n";
 
         // Обновить флаг
-        isInputFileExists = QFile::exists(inputFilePath->toUtf8().data());
+        isInputFileExists = QFile::exists(inputFilePath->data());
     }
 }
