@@ -5,3 +5,5 @@ generateTableOfContents/generateTableOfContents.pro.user
 .git/
 
 Zadachi.pdf
+
+*.tmp
