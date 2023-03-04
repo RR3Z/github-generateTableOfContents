@@ -2,68 +2,124 @@
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
+    QCoreApplication app(argc, argv);
 
-    // Объявить переменную, где хранится полный путь на входной файл
-    string inputFilePath;
+    string inputData;
+    string outputFilePath = "./Result/result.html";
+    QByteArray urlData;
+    QStringList fileContent;
+    QFile file(outputFilePath.data());
+    QFileInfo fileInfo(outputFilePath.data());
+    QDir dir = fileInfo.absoluteDir();
 
     // Запросить входные данные у пользователя...
-    requestInputData(&inputFilePath, argc, argv);
+    int argType = requestInputData(&inputData, argc, argv);
 
-    // Создать объект для входного файла
-    QFile inputFile(inputFilePath.data());
+    // В зависимости от того, чем является переданный аргумент...
+    switch (argType){
+    // Если в качестве аргумента был передан URL-адрес...
+    case 1:
+        // Спарсить HTML-страницу по URL-адресу...
+        parseByUrl(inputData, &urlData);
 
-    // Прочитать содержимое входного файла...
+        // Сгенерировать заголовки HTML-страницы с учетом отступов...
 
+        // Сохранить результат работы программы в файл...
 
-    // Сгенерировать заголовки HTML-страницы с учетом отступов...
+        // Create the folder if it doesn't exist
+        if (!dir.exists()) {
+            dir.mkpath(".");
+        }
 
+        // Create the file
+        if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            file.write(urlData);
+            file.close();
+        }
 
-    // Не забыть вернуть!!!!!!!!!!
-    //return a.exec();
+        break;
+    // Если в качестве аргумента был передан абсолютный путь...
+    case 0:
+        // Считать содержимое входного файла...
+        readInputDataFromFile(inputData, &fileContent);
+
+        // Сгенерировать заголовки HTML-страницы с учетом отступов...
+
+        // Сохранить результат работы программы в файл...
+
+        break;
+    default:
+        break;
+    }
+
+// Не забыть вернуть!!!!!!!!!!
+//return app.exec();
 }
 
-// Запросить входнные данные у пользователя
-void requestInputData(string *inputFilePath, int argc, char *argv[])
+int requestInputData(string *inputData, int argc, char *argv[])
 {
-    // Если был передан полный путь для входного файла...
-    if(argc == 2){
-        *inputFilePath = argv[2];
+    // Если с запуском программы был передан аргумент...
+    if(argc >= 2){
+        *inputData = argv[2];
     }
-    // Иначе запросить полный путь для входного файла...
+    // Иначе запросить входные данные...
     else{
-        cout << "\nPath for input file: ";
-        cin >> *inputFilePath;
+        cout << "\nInput data: ";
+        cin >> *inputData;
         cout << "\n";
     }
 
-    // Проверить формат входного файла...
-    int dot = inputFilePath->find_last_of('.');
-    while((inputFilePath->find(".html", dot - 1) == -1) || (inputFilePath->find(".txt", dot - 1) == -1) ){
-        // Вывести сообщение об ошибке
-        cout << "The format of the input file does not meet the requirements of the software.\n";
-
-        // Вывести пользователю сообщение с просьбой ввести полный путь для входного файла
-        cout << "\nPath for input file: ";
-        cin >> *inputFilePath;
-        cout << "\n";
-
-        // Обновить позицию последней точки в строке
-        dot = inputFilePath->find_last_of('.');
+    // Если переданный аргумент является ссылкой...
+    if(inputData->find("http://") != -1 || inputData->find("https://") != -1){
+        // В качестве результата выполнении функции вернуть значение, означающее, что переданный аргумент является ссылкой
+        return 1;
     }
-
-    // Определить, существует ли входной файл с заданным именем по заданному пути...
-    bool isInputFileExists = QFile::exists(inputFilePath->data());
-    while(!isInputFileExists){
-        // Вывести сообщение об ошибке
-        cout << "The input data file is specified incorrectly. The file may not exist.";
-
-        // Вывести пользователю сообщение с просьбой ввести полный путь для входного файла
-        cout << "\nPath for input file: ";
-        cin >> *inputFilePath;
-        cout << "\n";
-
-        // Обновить флаг
-        isInputFileExists = QFile::exists(inputFilePath->data());
+    // Иначе проверить является ли аргумент абсолютным путем для входного файла...
+    else{
+        // Если форматом входного файла является "html"...
+        if(inputData->find(".html", inputData->find_last_of('.') - 1) != -1){
+            // Если существует входной файл с заданным именем по заданному пути...
+            if(QFile::exists(inputData->data())){
+                // В качестве результата выполнении функции вернуть значение, означающее, что переданный аргумент является абсолютным путем
+                return 0;
+            }
+            // Иначе вывести соответствующую ошибку
+            else{
+                cout << "The input data file is specified incorrectly. The file may not exist.\n";
+            }
+        }
+        // Иначе вывести соответствующую ошибку
+        else{
+            cout << "The format of the input file does not meet the requirements of the software.\n";
+        }
     }
+    // В качестве результата выполнении функции вернуть значение, означающее, что переданный аргумент некорректен
+    return -1;
+}
+
+void readInputDataFromFile(string inputFilePath, QStringList *fileContent)
+{
+    QFile file(inputFilePath.data());
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)){
+        QTextStream in(&file);
+        QString content = in.readAll();
+        *fileContent = content.split("\n");
+        file.close();
+    }
+}
+
+void parseByUrl(string inputUrl, QByteArray *urlData)
+{
+    QNetworkAccessManager manager;
+    QUrl url(inputUrl.data());
+    QNetworkReply *reply = manager.get(QNetworkRequest(url));
+
+    QEventLoop loop;
+    QObject::connect(reply, &QNetworkReply::finished, &loop, [&]() {
+        *urlData = reply->readAll();
+        QCoreApplication::quit();
+        loop.quit();
+    });
+    loop.exec();
+
 }

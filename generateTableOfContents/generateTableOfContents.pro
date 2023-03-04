@@ -17,3 +17,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     header.h
+
+# Важно! Наличие этой строки обязательно для корректной функциональности программы
+QT+=network

@@ -7,7 +7,21 @@
 #include <QFile>
 #include <QDebug>
 #include <QTextStream>
+#include <QUrl>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QEventLoop>
+#include <QFileInfo>
+#include <QDir>
 using namespace std;
 
 // Запросить данные у пользователя
-void requestInputData(string *inputFilePath, int argc, char *argv[]);
+int requestInputData(string *inputData, int argc, char *argv[]);
+
+// Считать входные данные из файла
+void readInputDataFromFile(string inputFilePath, QStringList *fileContent);
+
+// Спарсить HTML-страницу по URL-адресу
+void parseByUrl(string inputUrl, QByteArray *urlData);
+
+void saveResultToFile(string outputFilePath);

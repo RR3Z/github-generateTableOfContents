@@ -7,3 +7,9 @@ generateTableOfContents/generateTableOfContents.pro.user
 Zadachi.pdf
 
 *.tmp
+
+Example.html
+
+Questions.txt
+
+generateTableOfContents/msvc_make.bat
