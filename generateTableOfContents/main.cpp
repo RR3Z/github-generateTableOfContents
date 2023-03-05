@@ -3,83 +3,64 @@
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
-
-    string inputData;
-    string outputFilePath = "./Result/result.html";
-    QByteArray urlData;
-    QStringList fileContent;
-    QFile file(outputFilePath.data());
-    QFileInfo fileInfo(outputFilePath.data());
-    QDir dir = fileInfo.absoluteDir();
+    string inputDataPath;
+    QString outputFilePath = app.applicationDirPath() + "/Result/result.html";
+    QByteArray inputDataByUrl;
+    QStringList inputData;
 
     // Запросить входные данные у пользователя...
-    int argType = requestInputData(&inputData, argc, argv);
+    int argType = requestInputData(&inputDataPath, argc, argv);
 
-    // В зависимости от того, чем является переданный аргумент...
-    switch (argType){
     // Если в качестве аргумента был передан URL-адрес...
-    case 1:
+    if(argType == 1){
         // Спарсить HTML-страницу по URL-адресу...
-        parseByUrl(inputData, &urlData);
+        parseByUrl(inputDataPath, &inputDataByUrl);
 
-        // Сгенерировать заголовки HTML-страницы с учетом отступов...
-
-        // Сохранить результат работы программы в файл...
-
-        // Create the folder if it doesn't exist
-        if (!dir.exists()) {
-            dir.mkpath(".");
-        }
-
-        // Create the file
-        if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-            file.write(urlData);
-            file.close();
-        }
-
-        break;
+        // Конвертация QByteArray в QStringList (для дальнейшей корректной работы программы)
+        QString tmpStr = QString::fromUtf8(inputDataByUrl.constData(), inputDataByUrl.length());
+        inputData = tmpStr.split('\n', Qt::SkipEmptyParts);
+    }
     // Если в качестве аргумента был передан абсолютный путь...
-    case 0:
+    if(argType == 0){
         // Считать содержимое входного файла...
-        readInputDataFromFile(inputData, &fileContent);
-
-        // Сгенерировать заголовки HTML-страницы с учетом отступов...
-
-        // Сохранить результат работы программы в файл...
-
-        break;
-    default:
-        break;
+        if(readInputDataFromFile(inputDataPath, &inputData) == 0){
+            return app.exec();
+        }
     }
 
-// Не забыть вернуть!!!!!!!!!!
-//return app.exec();
+    // Сгенерировать заголовки HTML-страницы с учетом отступов...
+
+
+    // Сохранить результат работы программы в файл...
+    saveToFile(outputFilePath, &inputData);
+
+    return app.exec();
 }
 
-int requestInputData(string *inputData, int argc, char *argv[])
+int requestInputData(string *inputDataPath, int argc, char *argv[])
 {
     // Если с запуском программы был передан аргумент...
     if(argc >= 2){
-        *inputData = argv[2];
+        *inputDataPath = argv[2];
     }
     // Иначе запросить входные данные...
     else{
         cout << "\nInput data: ";
-        cin >> *inputData;
+        cin >> *inputDataPath;
         cout << "\n";
     }
 
     // Если переданный аргумент является ссылкой...
-    if(inputData->find("http://") != -1 || inputData->find("https://") != -1){
+    if(inputDataPath->find("http://") != -1 || inputDataPath->find("https://") != -1){
         // В качестве результата выполнении функции вернуть значение, означающее, что переданный аргумент является ссылкой
         return 1;
     }
     // Иначе проверить является ли аргумент абсолютным путем для входного файла...
     else{
         // Если форматом входного файла является "html"...
-        if(inputData->find(".html", inputData->find_last_of('.') - 1) != -1){
+        if(inputDataPath->find(".html", inputDataPath->find_last_of('.') - 1) != -1){
             // Если существует входной файл с заданным именем по заданному пути...
-            if(QFile::exists(inputData->data())){
+            if(QFile::exists(inputDataPath->data())){
                 // В качестве результата выполнении функции вернуть значение, означающее, что переданный аргумент является абсолютным путем
                 return 0;
             }
@@ -93,18 +74,27 @@ int requestInputData(string *inputData, int argc, char *argv[])
             cout << "The format of the input file does not meet the requirements of the software.\n";
         }
     }
+
     // В качестве результата выполнении функции вернуть значение, означающее, что переданный аргумент некорректен
     return -1;
 }
 
-void readInputDataFromFile(string inputFilePath, QStringList *fileContent)
+int readInputDataFromFile(string inputFilePath, QStringList *inputData)
 {
-    QFile file(inputFilePath.data());
-    if (file.open(QIODevice::ReadOnly | QIODevice::Text)){
-        QTextStream in(&file);
-        QString content = in.readAll();
-        *fileContent = content.split("\n");
-        file.close();
+    // Если файл удалось открыть...
+    QFile inputFile(inputFilePath.data());
+    if (inputFile.open(QIODevice::ReadOnly | QIODevice::Text)){
+        // Сохранить все данные из файла в массив...
+        QTextStream in(&inputFile);
+        QString inputFileData = in.readAll();
+        *inputData = inputFileData.split("\n");
+        inputFile.close();
+        return 1;
+    }
+    // Иначе вывести соответствующую ошибку
+    else{
+        cout<<"The file could not be opened at the specified path";
+        return 0;
     }
 }
 
@@ -122,4 +112,26 @@ void parseByUrl(string inputUrl, QByteArray *urlData)
     });
     loop.exec();
 
+}
+
+void saveToFile(QString outputFilePath, QStringList *outputData)
+{
+    QFile file(outputFilePath);
+    QFileInfo fileInfo(outputFilePath);
+    QDir dir = fileInfo.absoluteDir();
+
+    // Создать папку, указанную в абсолютном пути, если таковой не существует
+    if (!dir.exists()) {
+        dir.mkpath(".");
+    }
+
+    // Cохранить в файл данные
+    if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        QTextStream out(&file);
+        foreach(const QString& str, *outputData){
+            out << str << "\n";
+        }
+    }
+
+    file.close();
 }

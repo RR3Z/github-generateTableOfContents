@@ -16,12 +16,13 @@
 using namespace std;
 
 // Запросить данные у пользователя
-int requestInputData(string *inputData, int argc, char *argv[]);
+int requestInputData(string *inputDataPath, int argc, char *argv[]);
 
 // Считать входные данные из файла
-void readInputDataFromFile(string inputFilePath, QStringList *fileContent);
+int readInputDataFromFile(string inputFilePath, QStringList *inputData);
 
 // Спарсить HTML-страницу по URL-адресу
 void parseByUrl(string inputUrl, QByteArray *urlData);
 
-void saveResultToFile(string outputFilePath);
+// Сохранить данные в файл
+void saveToFile(QString outputFilePath, QStringList *outputData);
